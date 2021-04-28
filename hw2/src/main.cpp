@@ -17,7 +17,6 @@ ostream& operator<< (ostream &os, vector<vector<int>> &dp) {
 }
 
 // #Penalty
-// TODO
 struct Penalty {
 	int match;
 	int mismatch;
@@ -28,7 +27,7 @@ struct Penalty {
 struct Blast {
 
 // ##constructor
-	Blast(vector<vector<int>> &dp, int mat, int mis, int gap, string_view ref, string_view seq) {
+	Blast(vector<vector<int>> &dp, Penalty p, string_view ref, string_view seq) {
 		auto IDX = pair{0, 0};
 		for (int i = 1, M = dp.size(); i < M; i++) {
 			for (int j = 1, N = dp.front().size(); j < N; j++) {
@@ -47,7 +46,7 @@ struct Blast {
 			int M = -1;
 
 			// insert
-			if (dp[x-1][y] + gap == dp[x][y] and dp[x-1][y] > M) {
+			if (dp[x-1][y] + p.gap == dp[x][y] and dp[x-1][y] > M) {
 				M = dp[x-1][y];
 				n_x = x - 1;
 
@@ -56,7 +55,7 @@ struct Blast {
 			}
 
 			// delete
-			if (dp[x][y-1] + gap == dp[x][y] and dp[x][y-1] > M) {
+			if (dp[x][y-1] + p.gap == dp[x][y] and dp[x][y-1] > M) {
 				M = dp[x][y-1];
 				n_y = y - 1;
 
@@ -65,7 +64,7 @@ struct Blast {
 			}
 
 			// match or mismatch
-			if (dp[x-1][y-1] + (seq[x-1] == ref[y-1] ? mat : mis) == dp[x][y] and dp[x-1][y-1] > M) {
+			if (dp[x-1][y-1] + (seq[x-1] == ref[y-1] ? p.match : p.mismatch) == dp[x][y] and dp[x-1][y-1] > M) {
 				M = dp[x-1][y-1];
 				n_x = x - 1;
 				n_y = y - 1;
@@ -135,13 +134,7 @@ struct Blast {
 };
 
 // #Banded Smith Waterman
-auto banded (
-	string_view ref,
-	string_view seq,
-	int mat = 3,
-	int mis = -3,
-	int gap = -2
-) {
+auto banded(string_view ref, string_view seq, Penalty p = {3, -3, -2}) {
 	int M = seq.size() + 1;
 	int N = ref.size() + 1;
 	auto dp = vector(M, vector(N, 0));
@@ -149,21 +142,21 @@ auto banded (
 	// Smith Waterman
 	for (int i = 1; i < M; i++) {
 		for (int j = 1; j < N; j++) {
-			int match = dp[i-1][j-1] + (seq[i-1] == ref[j-1] ? mat : mis);
-			int indel = max(dp[i][j-1], dp[i-1][j]) + gap;
+			int match = dp[i-1][j-1] + (seq[i-1] == ref[j-1] ? p.match : p.mismatch);
+			int indel = max(dp[i][j-1], dp[i-1][j]) + p.gap;
 
 			dp[i][j] = max({0, match, indel});
 		}
 	}
 //	cout << dp;
 
-	return Blast(dp, mat, mis, gap, ref, seq);
+	return Blast(dp, p, ref, seq);
 }
 
 // #Main function
 int main() {
-	auto ref = "CCAATGCCACAAAACATCTGTCTCTAACTGGTGTGTGTGT"s;
-	auto seq = "CCAGCCCAAAATCTGTTTTAATGGTGGATTTGTGT"s;
+	auto ref = "TTTTTTTCCAATGCCACAAAACATCTGTCTCTAACTGGTGTGTGTGTGGGGGGG"s;
+	auto seq = "AAAACCAGCCCAAAATCTGTTTTAATGGTGGATTTGTGTAAAAAAA"s;
 
 //	auto ref = "TGTTACGG"s;
 //	auto seq = "GGTTGACTA"s;
